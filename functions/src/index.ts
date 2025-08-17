@@ -36,13 +36,15 @@ export const sendWeatherNotification = onValueUpdated(
       );
 
       const beforeEntries = Object.values<WeatherEntry>(before);
-      
+
       // Handle case when there's no previous data (first entry)
       if (beforeEntries.length === 0) {
-        logger.info(`Initial weather data for ${deviceId}, sending notification`);
+        logger.info(
+          `Initial weather data for ${deviceId}, sending notification`
+        );
       } else {
         // Use first entry as initial value to prevent type issues
-        let latestBefore: WeatherEntry = beforeEntries.reduce(
+        const latestBefore: WeatherEntry = beforeEntries.reduce(
           latestFilter,
           beforeEntries[0]
         );
