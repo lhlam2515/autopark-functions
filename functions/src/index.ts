@@ -3,7 +3,7 @@ import * as logger from "firebase-functions/logger";
 import { onValueUpdated } from "firebase-functions/v2/database";
 
 import { WeatherEntry } from "./types";
-import { getTimestamp, sendWeatherToUser } from "./utils";
+import { getTimestamp, sendCautionToUser, sendWeatherToUser } from "./utils";
 
 // Initialize Firebase Admin SDK
 admin.initializeApp();
@@ -80,7 +80,59 @@ export const sendWeatherNotification = onValueUpdated(
 
       return Promise.all(notifications);
     } catch (error) {
-      logger.error(`Error processing weather notification for device ${event.params.deviceId}:`, error);
+      logger.error(
+        `Error processing weather notification for device ${event.params.deviceId}:`,
+        error
+      );
+      return null;
+    }
+  }
+);
+
+export const sendCautionNotification = onValueUpdated(
+  { ref: "/devices/{deviceId}/ts", region: "asia-southeast1" },
+  async (event) => {
+    try {
+      const deviceId = event.params.deviceId;
+
+      const before = event.data.before.val();
+      const after = event.data.after.val();
+
+      if (before === after) {
+        logger.info(`No change in caution data for ${deviceId}`);
+        return null;
+      }
+
+      const slots = await admin
+        .database()
+        .ref(`/devices/${deviceId}/slots`)
+        .get();
+
+      const notifications: Promise<boolean>[] = [];
+
+      slots.forEach((slotSnap) => {
+        const slotData = slotSnap.val();
+        if (slotData && slotData.userId) {
+          const duration =
+            getTimestamp(after) - getTimestamp(slotData.checkInTime || before);
+
+          if (duration > 360 * 60 * 1000) { // 6 hours
+            notifications.push(
+              sendCautionToUser({
+                userId: slotData.userId,
+                duration,
+              })
+            );
+          }
+        }
+      });
+
+      return Promise.all(notifications);
+    } catch (error) {
+      logger.error(
+        `Error processing caution notification for device ${event.params.deviceId}:`,
+        error
+      );
       return null;
     }
   }

@@ -89,3 +89,47 @@ export const sendWeatherToUser = async ({
     return false;
   }
 };
+
+export const sendCautionToUser = async ({
+  userId,
+  duration,
+}: {
+  userId: string;
+  duration: number;
+}): Promise<boolean> => {
+  try {
+    const userSnap = await admin.database().ref(`/users/${userId}`).get();
+    if (!userSnap.exists()) {
+      logger.error(`User ${userId} not found.`);
+      return false;
+    }
+
+    const userData = userSnap.val();
+    const fcmToken = userData?.fcmToken;
+
+    // Validate FCM token
+    if (!fcmToken || typeof fcmToken !== "string" || fcmToken.trim() === "") {
+      logger.error(`No valid FCM token for user ${userId}`);
+      return false;
+    }
+
+    const hours = Math.floor(duration / 3600000);
+    const message = {
+      token: fcmToken,
+      notification: {
+        title: `Caution Alert`,
+        body: `You have been parked for ${hours} hours.`,
+      },
+    };
+
+    await admin.messaging().send(message);
+    logger.info(`Caution notification sent to user ${userId}`);
+    return true;
+  } catch (error) {
+    logger.error(
+      `Error sending caution notification to user ${userId}:`,
+      error
+    );
+    return false;
+  }
+};
