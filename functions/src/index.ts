@@ -116,7 +116,7 @@ export const sendCautionNotification = onValueUpdated(
           const duration =
             getTimestamp(after) - getTimestamp(slotData.checkInTime || before);
 
-          if (duration > 360 * 60 * 1000) { // 6 hours
+          if (Math.abs(duration - 6 * 3600 * 1000) < 10000) { // 6 hours
             notifications.push(
               sendCautionToUser({
                 userId: slotData.userId,
