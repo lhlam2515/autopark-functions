@@ -25,8 +25,8 @@ This repository contains the Firebase Cloud Functions that support the [AutoPark
 1. Clone the repository
 
    ```bash
-   git clone https://github.com/lhlam2515/autopark-firebase.git
-   cd autopark-firebase
+   git clone https://github.com/lhlam2515/autopark-functions.git
+   cd autopark-functions
    ```
 
 2. Install dependencies
